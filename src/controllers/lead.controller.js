@@ -12,8 +12,17 @@ export const createLead = async (req, res) => {
       assignedTo = defaultUser ? defaultUser._id : null;
     }
 
+    // Normalize form fields → CRM fields
+    const normalizedData = {
+      name: req.body["Full Name"] || req.body.name,
+      email: req.body["EMail Id"] || req.body.email,
+      contact: req.body["Phone Number"] || req.body.contact,
+      city: req.body["City"] || req.body.city,
+      requirements: req.body.requirements || "",
+    };
+
     const lead = await Lead.create({
-      ...req.body,
+      ...normalizedData,
       assignedTo,
     });
 
