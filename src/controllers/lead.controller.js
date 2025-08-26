@@ -1,9 +1,26 @@
 
 import { Lead } from '../models/Lead.js';
+import { User } from '../models/User.js';
 
 export const createLead = async (req, res) => {
-  const lead = await Lead.create({ ...req.body, assignedTo: req.body.assignedTo || req.user.id });
-  res.status(201).json({ success: true, data: lead });
+  try {
+    let assignedTo = req.body.assignedTo;
+
+    // if no auth, assign a default user (optional)
+    if (!assignedTo && !req.user) {
+      const defaultUser = await User.findOne({ email: "admin@cultcrm.com" });
+      assignedTo = defaultUser ? defaultUser._id : null;
+    }
+
+    const lead = await Lead.create({
+      ...req.body,
+      assignedTo,
+    });
+
+    res.status(201).json({ success: true, data: lead });
+  } catch (err) {
+    res.status(400).json({ success: false, message: err.message });
+  }
 };
 
 export const listLeads = async (req, res) => {
