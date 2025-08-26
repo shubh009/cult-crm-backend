@@ -14,11 +14,11 @@ export const createLead = async (req, res) => {
 
     // Normalize form fields → CRM fields
     const normalizedData = {
-      name: req.body["Full Name"] || req.body.name,
-      email: req.body["EMail Id"] || req.body.email,
-      contact: req.body["Phone Number"] || req.body.contact,
+      name: req.body["First name"] || req.body.name,
+      email: req.body["Email"] || req.body.email,
+      contact: req.body["Phone number"] || req.body.contact,
       city: req.body["City"] || req.body.city,
-      requirements: req.body.requirements || "",
+      requirements: req.body["Requirements"] || req.body.requirements,
     };
 
     const lead = await Lead.create({
