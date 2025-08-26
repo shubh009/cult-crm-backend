@@ -1,6 +1,6 @@
 
 import jwt from 'jsonwebtoken';
-import { User } from '../models/User.js';
+import { User } from "../models/User.js";
 
 function sign(user) {
   return jwt.sign({ id: user._id, role: user.role, email: user.email }, process.env.JWT_SECRET, {
