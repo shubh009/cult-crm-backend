@@ -24,7 +24,7 @@ const corsOptions = {
 };
 app.use(cors(corsOptions));
 
-app.get('/', (req, res) => res.json({ name: 'Cult CRM API', version: '1.0.0' }));
+app.get('/', (req, res) => res.json({ name: 'Cult CRM Backend', version: '1.0.0' }));
 
 app.use('/api/health', healthRoutes);
 app.use('/api/auth', authRoutes);

@@ -5,7 +5,7 @@ import { createLead, listLeads, getLead, updateLead, deleteLead } from '../contr
 
 const router = Router();
 
-router.use(authRequired);
+//router.use(authRequired);
 
 router.route('/')
   .get(listLeads)
