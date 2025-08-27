@@ -5,28 +5,49 @@ import { User } from '../models/User.js';
 export const createLead = async (req, res) => {
   try {
     const body = req.body || {};
+    let leadData = {};
 
-    // Normalize input (Facebook OR frontend)
-    const normalizedData = {
-      name: body["Full name"] || body.name,
-      email: body.Email || body.email,
-      contact: body["Phone number"] || body.contact,
-      city: body.City || body.city,
-      requirements: body.Requirements || body.requirements,
-      status: body.Status || body.status || "new",
-    };
+    // CASE 1: Facebook Webhook payload
+    if (body.entry && Array.isArray(body.entry)) {
+      const fieldData = body.entry[0]?.changes[0]?.value?.field_data || [];
 
-    // Handle assignedTo
+      fieldData.forEach((field) => {
+        const key = field.name.toLowerCase();
+        const value = field.values[0];
+
+        if (key.includes("name")) leadData.name = value;
+        if (key.includes("email")) leadData.email = value;
+        if (key.includes("phone")) leadData.contact = value;
+        if (key.includes("city")) leadData.city = value;
+        if (key.includes("requirement")) leadData.requirements = value;
+      });
+
+      leadData.status = "new"; // default for FB leads
+    }
+    // CASE 2: Normal JSON payload (frontend / Postman)
+    else {
+      leadData = {
+        name: body["First name"] || body.name,
+        email: body.Email || body.email,
+        contact: body["Phone number"] || body.contact,
+        city: body.City || body.city,
+        requirements: body.Requirements || body.requirements,
+        status: body.Status || body.status || "new",
+      };
+    }
+
+    // Assign user (default: admin)
     let assignedTo = body.assignedTo;
     if (!assignedTo) {
       const defaultUser = await User.findOne({ email: "admin@cultcrm.com" });
       assignedTo = defaultUser ? defaultUser._id : null;
     }
-    normalizedData.assignedTo = assignedTo;
+    leadData.assignedTo = assignedTo;
 
-    console.log("Assigned To:", assignedTo);
+    console.log("Normalized Lead Data:", leadData);
 
-    const lead = await Lead.create(normalizedData);
+    // Save lead
+    const lead = await Lead.create(leadData);
 
     return res.status(201).json({
       success: true,
@@ -41,6 +62,7 @@ export const createLead = async (req, res) => {
     });
   }
 };
+
 
 export const listLeads = async (req, res) => {
   const { status, source, assignedTo, q } = req.query;
