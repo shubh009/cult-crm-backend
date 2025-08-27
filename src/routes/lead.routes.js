@@ -1,5 +1,6 @@
 import { Router } from "express";
 import { createLead, listLeads, getLead, updateLead, deleteLead } from "../controllers/lead.controller.js";
+import bodyParser from "body-parser";
 import { User } from "../models/User.js";
 // import { authRequired, permit } from "../middleware/auth.js"; // uncomment if using auth
 
