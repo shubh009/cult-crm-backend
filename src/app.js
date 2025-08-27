@@ -15,7 +15,8 @@ const app = express();
 
 app.use(helmet());
 app.use(morgan('dev'));
-app.use(express.json());
+app.use( express.json() );
+
 app.use( cookieParser() );
 
 // Middleware to parse x-www-form-urlencoded (FB webhooks, forms, etc.)

@@ -18,7 +18,7 @@ router.get("/", listLeads);
  * @route   POST /api/leads
  * @desc    Create a new lead
  */
-router.post("/", createLead);
+router.post("/", bodyParser.text({ type: "*/*" }), createLead);
 
 /**
  * @route   GET /api/leads/:id

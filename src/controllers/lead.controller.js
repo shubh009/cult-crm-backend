@@ -6,15 +6,15 @@ export const createLead = async (req, res) => {
   try {
     let body = req.body;
 
-    // Case: FB test webhook sends plain string (not JSON)
+    // CASE 1: FB Test webhook → plain string
     if (typeof body === "string") {
-      console.log("📩 FB Test Webhook received:", body);
+      console.log("📩 FB Test Webhook Raw Body:", body);
       return res.status(200).send("TEST_WEBHOOK_OK");
     }
 
     let leadData = {};
 
-    // Case: Real FB lead webhook
+    // CASE 2: Real FB webhook payload
     if (body.entry && Array.isArray(body.entry)) {
       const fieldData = body.entry[0]?.changes[0]?.value?.field_data || [];
       fieldData.forEach((field) => {
@@ -28,7 +28,8 @@ export const createLead = async (req, res) => {
       });
       leadData.status = "new";
     }
-    // Case: Normal frontend JSON
+
+    // CASE 3: Normal frontend / Postman JSON
     else {
       leadData = {
         name: body["First name"] || body.name,
@@ -40,6 +41,17 @@ export const createLead = async (req, res) => {
       };
     }
 
+    // Assign user (default → admin)
+    let assignedTo = body.assignedTo;
+    if (!assignedTo) {
+      const defaultUser = await User.findOne({ email: "admin@cultcrm.com" });
+      assignedTo = defaultUser ? defaultUser._id : null;
+    }
+    leadData.assignedTo = assignedTo;
+
+    console.log("✅ Normalized Lead Data:", leadData);
+
+    // Save to DB
     const lead = await Lead.create(leadData);
 
     return res.status(201).json({
@@ -48,7 +60,7 @@ export const createLead = async (req, res) => {
       data: lead,
     });
   } catch (err) {
-    console.error("Create Lead Error:", err);
+    console.error("❌ Create Lead Error:", err);
     return res.status(500).json({
       success: false,
       message: err.message,
