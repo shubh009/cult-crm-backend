@@ -8,7 +8,7 @@ export const createLead = async (req, res) => {
 
     // Normalize input (Facebook OR frontend)
     const normalizedData = {
-      name: body["First name"] || body.name,
+      name: body["Full name"] || body.name,
       email: body.Email || body.email,
       contact: body["Phone number"] || body.contact,
       city: body.City || body.city,
