@@ -4,27 +4,31 @@ import { User } from '../models/User.js';
 
 export const createLead = async (req, res) => {
   try {
-    const body = req.body || {};
+    let body = req.body;
+
+    // Case: FB test webhook sends plain string (not JSON)
+    if (typeof body === "string") {
+      console.log("📩 FB Test Webhook received:", body);
+      return res.status(200).send("TEST_WEBHOOK_OK");
+    }
+
     let leadData = {};
 
-    // CASE 1: Facebook Webhook payload
+    // Case: Real FB lead webhook
     if (body.entry && Array.isArray(body.entry)) {
       const fieldData = body.entry[0]?.changes[0]?.value?.field_data || [];
-
       fieldData.forEach((field) => {
         const key = field.name.toLowerCase();
         const value = field.values[0];
-
         if (key.includes("name")) leadData.name = value;
         if (key.includes("email")) leadData.email = value;
         if (key.includes("phone")) leadData.contact = value;
         if (key.includes("city")) leadData.city = value;
         if (key.includes("requirement")) leadData.requirements = value;
       });
-
-      leadData.status = "new"; // default for FB leads
+      leadData.status = "new";
     }
-    // CASE 2: Normal JSON payload (frontend / Postman)
+    // Case: Normal frontend JSON
     else {
       leadData = {
         name: body["First name"] || body.name,
@@ -36,17 +40,6 @@ export const createLead = async (req, res) => {
       };
     }
 
-    // Assign user (default: admin)
-    let assignedTo = body.assignedTo;
-    if (!assignedTo) {
-      const defaultUser = await User.findOne({ email: "admin@cultcrm.com" });
-      assignedTo = defaultUser ? defaultUser._id : null;
-    }
-    leadData.assignedTo = assignedTo;
-
-    console.log("Normalized Lead Data:", leadData);
-
-    // Save lead
     const lead = await Lead.create(leadData);
 
     return res.status(201).json({
@@ -62,6 +55,7 @@ export const createLead = async (req, res) => {
     });
   }
 };
+
 
 
 export const listLeads = async (req, res) => {
