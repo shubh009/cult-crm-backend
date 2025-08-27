@@ -4,31 +4,41 @@ import { User } from '../models/User.js';
 
 export const createLead = async (req, res) => {
   try {
-    let assignedTo = req.body.assignedTo;
+    const body = req.body || {};
 
-    // if no auth, assign a default user (optional)
-    if (!assignedTo && !req.user) {
+    // Normalize input (Facebook OR frontend)
+    const normalizedData = {
+      name: body["First name"] || body.name,
+      email: body.Email || body.email,
+      contact: body["Phone number"] || body.contact,
+      city: body.City || body.city,
+      requirements: body.Requirements || body.requirements,
+      status: body.Status || body.status || "new",
+    };
+
+    // Handle assignedTo
+    let assignedTo = body.assignedTo;
+    if (!assignedTo) {
       const defaultUser = await User.findOne({ email: "admin@cultcrm.com" });
       assignedTo = defaultUser ? defaultUser._id : null;
     }
+    normalizedData.assignedTo = assignedTo;
 
-    // Normalize form fields → CRM fields
-    const normalizedData = {
-      name: req.body["First name"] || req.body.name,
-      email: req.body["Email"] || req.body.email,
-      contact: req.body["Phone number"] || req.body.contact,
-      city: req.body["City"] || req.body.city,
-      requirements: req.body["Requirements"] || req.body.requirements,
-    };
+    console.log("Assigned To:", assignedTo);
 
-    const lead = await Lead.create({
-      ...normalizedData,
-      assignedTo,
+    const lead = await Lead.create(normalizedData);
+
+    return res.status(201).json({
+      success: true,
+      message: "Lead created",
+      data: lead,
     });
-
-    res.status(201).json({ success: true, data: lead });
   } catch (err) {
-    res.status(400).json({ success: false, message: err.message });
+    console.error("Create Lead Error:", err);
+    return res.status(500).json({
+      success: false,
+      message: err.message,
+    });
   }
 };
 

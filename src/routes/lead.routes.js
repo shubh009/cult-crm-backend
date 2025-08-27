@@ -1,63 +1,47 @@
-
 import { Router } from "express";
-import { Lead } from "../models/Lead.js";
+import { createLead, listLeads, getLead, updateLead, deleteLead } from "../controllers/lead.controller.js";
 import { User } from "../models/User.js";
+// import { authRequired, permit } from "../middleware/auth.js"; // uncomment if using auth
 
 const router = Router();
 
-/**
- * Create Lead - Handles both CRM form & Facebook webhook
- */
+// Toggle authentication via environment variable
 const authEnabled = process.env.AUTH_ENABLED === "true";
-router.post("/", async (req, res) => {
-  try {
-    let payload = req.body;
-    let leadData = {};
 
-    // CASE 1: Facebook Lead Ads webhook payload
-    if (payload.entry && Array.isArray(payload.entry)) {
-      const fieldData =
-        payload.entry[0]?.changes[0]?.value?.field_data || [];
+/**
+ * @route   GET /api/leads
+ * @desc    List all leads
+ */
+router.get("/", listLeads);
 
-      fieldData.forEach((field) => {
-        const key = field.name.toLowerCase();
-        const value = field.values[0];
+/**
+ * @route   POST /api/leads
+ * @desc    Create a new lead
+ */
+router.post("/", createLead);
 
-        if (key.includes("name")) leadData.name = value;
-        if (key.includes("email")) leadData.email = value;
-        if (key.includes("phone")) leadData.contact = value;
-        if (key.includes("city")) leadData.city = value;
-        if (key.includes("requirement")) leadData.requirements = value;
-      });
-    }
-
-    // CASE 2: Normal CRM form submission (Postman or your frontend)
-    else {
-      leadData = {
-        name: payload["First name"] || payload.name,
-        email: payload["Email"] || payload.email,
-        contact: payload["Phone Number"] || payload.contact,
-        city: payload["City"] || payload.city,
-        requirements: payload["Requirements"] || payload.requirements,
-      };
-    }
-
-    // Assign default user if not provided
-    if (!leadData.assignedTo) {
-      const defaultUser = await User.findOne({ email: "admin@cultcrm.com" });
-      leadData.assignedTo = defaultUser ? defaultUser._id : null;
-    }
-
-    // Save lead in DB
-    const lead = await Lead.create(leadData);
-
-    return res
-      .status(201)
-      .json({ success: true, message: "Lead created", data: lead });
-  } catch (err) {
-    console.error("Error creating lead:", err);
-    return res.status(500).json({ success: false, message: err.message });
-  }
-});
+/**
+ * @route   GET /api/leads/:id
+ * @desc    Get a single lead
+ * @route   PUT /api/leads/:id
+ * @desc    Update a lead
+ * @route   DELETE /api/leads/:id
+ * @desc    Delete a lead
+ */
+if (authEnabled) {
+  // Auth enabled → use permit middleware
+  router
+    .route("/:id")
+    .get(getLead)
+    .put((req, res, next) => permit("admin", "manager", "agent")(req, res, next), updateLead)
+    .delete((req, res, next) => permit("admin", "manager")(req, res, next), deleteLead);
+} else {
+  // Auth disabled → no middleware
+  router
+    .route("/:id")
+    .get(getLead)
+    .put(updateLead)
+    .delete(deleteLead);
+}
 
 export default router;
