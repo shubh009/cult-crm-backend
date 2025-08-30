@@ -2,36 +2,18 @@
 import { Lead } from '../models/Lead.js';
 import { User } from '../models/User.js';
 
+
 export const createLead = async (req, res) => {
-  try {
+  try{
+    
+    // FB Webhook Auth Check
+    const auth = (req.get('Authorization') || '').split(' ')[1] || '';
+     if (auth !== process.env.SHEETS_API_KEY) {
+      return res.status(401).json({ error: 'unauthorized access from Sheet' });
+     }
+    
+
     let body = req.body;
-
-    // CASE 1: FB Test Webhook (raw string like "Name+Phone\nCity")
-    if (typeof body === "string") {
-      console.log("📩 FB Raw Body:", body);
-
-      // Example: "Bhawana Gupta+911234567890\nFirozabad"
-      const [namePhone, city] = body.split("\n");
-      const [name, phone] = namePhone.split("+");
-
-      const leadData = {
-        name: name?.trim(),
-        contact: phone?.trim(),
-        city: city?.trim(),
-        status: "new",
-        assignedTo: null,
-      };
-
-      console.log("✅ Extracted Test Lead:", leadData);
-
-      const lead = await Lead.create(leadData);
-
-      return res.status(201).json({
-        success: true,
-        message: "Lead created from FB test webhook",
-        data: lead,
-      });
-    }
 
     // CASE 2: Real FB Webhook
     let leadData = {};
