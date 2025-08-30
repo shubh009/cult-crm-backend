@@ -6,13 +6,7 @@ import { User } from '../models/User.js';
 export const createLead = async (req, res) => {
   try{
     
-    // FB Webhook Auth Check
-    const auth = (req.get('Authorization') || '').split(' ')[1] || '';
-     if (auth !== process.env.SHEETS_API_KEY) {
-      return res.status(401).json({ error: 'unauthorized access from Sheet' });
-     }
-    
-
+  
     let body = req.body;
 
     // CASE 2: Real FB Webhook
